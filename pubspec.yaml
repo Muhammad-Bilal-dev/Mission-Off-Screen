@@ -1,0 +1,41 @@
+name: screentime_buddy
+description: "Mission Off-Screen – screen-time missions for kids"
+publish_to: 'none'
+version: 1.0.1+2
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # Firebase (stable for your project)
+  firebase_core: ^3.4.0
+  firebase_auth: ^5.2.0
+  cloud_firestore: ^5.4.4
+
+  # Local notifications (delay scheduling)
+  flutter_local_notifications: ^17.2.3
+
+  # Optional: open Android settings for exact alarms (kept)
+  android_intent_plus: ^5.3.1
+
+  # Audio & animation
+  audioplayers: ^5.2.1
+  lottie: ^3.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/logo.png
+    - assets/images/milo_fox.png
+    - assets/audio/mission_vo_placeholder.mp3
+    - assets/audio/celebrate.mp3
+    - assets/lottie/celebrate.json

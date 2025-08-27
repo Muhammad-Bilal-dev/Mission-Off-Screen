@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "667202481904",
+    "project_id": "screentime-buddy123",
+    "storage_bucket": "screentime-buddy123.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:667202481904:android:5ff7fe6fc97c3be4aa1c35",
+        "android_client_info": {
+          "package_name": "com.bilal.screentime_buddy"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "667202481904-dcrk3qqe48o6uekbnuc6j3rp63fff1hc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyACdVFKQuJMGd_ApMjIqyw5vGPAYjgxDOg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "667202481904-dcrk3qqe48o6uekbnuc6j3rp63fff1hc.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "667202481904-l886m90r95fffd45ioqc8oj72nqhdmrn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.bilal.screentimeBuddy"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
