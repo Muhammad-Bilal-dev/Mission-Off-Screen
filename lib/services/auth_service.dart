@@ -1,36 +1,82 @@
+// lib/services/auth_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthService {
-  final _auth = FirebaseAuth.instance;
-  final _db = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   Stream<User?> get authChanges => _auth.authStateChanges();
   User? get currentUser => _auth.currentUser;
+
+  Future<bool> _getPaywallEnabledSafe() async {
+    try {
+      final doc = await _db.collection('App_Config').doc('global').get();
+      final data = doc.data() ?? {};
+      return data['paywallEnabled'] == true;
+    } catch (_) {
+      // If we can't read (shouldn't happen after auth), assume OFF to avoid blocking signups.
+      return false;
+    }
+  }
 
   Future<UserCredential> signUp({
     required String email,
     required String password,
     required String displayName,
   }) async {
+    final trimmedEmail = email.trim().toLowerCase();
+    final trimmedPassword = password.trim();
+    final trimmedDisplayName = displayName.trim();
+
+    if (trimmedEmail.isEmpty || trimmedPassword.isEmpty) {
+      throw FirebaseAuthException(
+        code: 'invalid-argument',
+        message: 'Email and password cannot be empty.',
+      );
+    }
+    if (trimmedPassword.length < 6) {
+      throw FirebaseAuthException(
+        code: 'weak-password',
+        message: 'Password should be at least 6 characters.',
+      );
+    }
+
+    // 1) Create the auth user first (this authenticates subsequent Firestore reads/writes)
     final cred = await _auth.createUserWithEmailAndPassword(
-      email: email.trim(),
-      password: password.trim(),
+      email: trimmedEmail,
+      password: trimmedPassword,
     );
+    final user = cred.user;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'user-not-found',
+        message: 'User creation failed unexpectedly.',
+      );
+    }
 
-    // Update displayName
-    await cred.user?.updateDisplayName(displayName);
+    if (trimmedDisplayName.isNotEmpty) {
+      await user.updateDisplayName(trimmedDisplayName);
+    }
 
-    // Create user doc with early-adopter flags
-    await _db.collection('users').doc(cred.user!.uid).set({
-      'email': email.trim(),
-      'name': displayName.trim(),
+    // 2) Now we are authenticated → safe to read config
+    final paywallOn = await _getPaywallEnabledSafe();
+
+    // 3) Write user profile according to paywall state
+    final userDoc = {
+      'uid': user.uid,
+      'email': trimmedEmail,
+      'name': trimmedDisplayName.isEmpty ? 'User' : trimmedDisplayName,
       'role': 'parent',
-      'earlyAdopter': true,
-      'paywallExempt': true,
+      // If paywall was OFF at signup time → early adopter
+      'earlyAdopter': !paywallOn,
+      // Support both shapes:
+      'isSubscriber': false,
+      'subscriptionStatus': 'none',
       'createdAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    };
 
+    await _db.collection('users').doc(user.uid).set(userDoc, SetOptions(merge: true));
     return cred;
   }
 
@@ -39,7 +85,7 @@ class AuthService {
     required String password,
   }) {
     return _auth.signInWithEmailAndPassword(
-      email: email.trim(),
+      email: email.trim().toLowerCase(),
       password: password.trim(),
     );
   }

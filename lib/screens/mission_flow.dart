@@ -49,7 +49,7 @@ class _MissionFlowState extends State<MissionFlow> {
   @override
   void dispose() {
     _ticker?.cancel();
-    _ap.stop();
+    _ap.stop(); // Ensure audio is stopped
     _ap.dispose();
     super.dispose();
   }
@@ -57,10 +57,13 @@ class _MissionFlowState extends State<MissionFlow> {
   Future<void> _bootstrap() async {
     try {
       // Clear any stray notifications now that we're in the app.
-      await NotificationService.instance.cancelAll();
+      NotificationService.instance.cancelAll().then((_) {
+      }).catchError((e) {
+      });
 
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) {
+        if (!mounted) return;
         setState(() {
           _error = 'Not signed in';
           _loading = false;
@@ -71,11 +74,13 @@ class _MissionFlowState extends State<MissionFlow> {
       // 1) Active child name
       final userDoc =
       await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (!mounted) return;
       final name = (userDoc.data()?['activeChildName'] as String?)?.trim();
       _childName = (name == null || name.isEmpty) ? 'buddy' : name;
 
       // 2) Fetch missions (root "missions")
       final ms = await FirebaseFirestore.instance.collection('missions').get();
+      if (!mounted) return;
       if (ms.docs.isEmpty) {
         setState(() {
           _error = 'No missions found. Add docs to the "missions" collection.';
@@ -96,20 +101,24 @@ class _MissionFlowState extends State<MissionFlow> {
       _durationSec = (m['durationSec'] as num?)?.toInt() ?? 60;
       _audioUrl = (m['audioUrl'] as String?) ?? '';
 
-      // 3) start the timer and (optionally) voice-over
+      // 3) Set initial state and START THE TICKER IMMEDIATELY
+      if (!mounted) return;
       setState(() {
         _left = Duration(seconds: _durationSec);
         _loading = false;
       });
 
+      _startTicker(); // Start ticker as soon as UI is ready to display the time
+
+      // 4) Play audio (optionally) without awaiting it before ticker starts
       if (_audioUrl.isNotEmpty) {
-        try {
-          await _ap.play(UrlSource(_audioUrl));
-        } catch (_) {}
+        _ap.play(UrlSource(_audioUrl)).then((_) {
+        }).catchError((e) {
+        });
       }
 
-      _startTicker();
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = 'Failed to load mission: $e';
         _loading = false;
@@ -118,21 +127,48 @@ class _MissionFlowState extends State<MissionFlow> {
   }
 
   void _startTicker() {
-    _ticker?.cancel();
-    _ticker = Timer.periodic(const Duration(seconds: 1), (t) async {
-      if (!mounted) return;
-      final next = _left - const Duration(seconds: 1);
-      if (next.isNegative || next == Duration.zero) {
-        t.cancel();
-        setState(() => _left = Duration.zero);
+    _ticker?.cancel(); // Cancel any existing ticker
+
+    // Ensure _left has a valid duration before starting
+    if (_left <= Duration.zero && _durationSec > 0) {
+      _left = Duration(seconds: _durationSec);
+    }
+
+    // If duration is zero or less, complete immediately
+    if (_left <= Duration.zero) {
+      if (mounted) {
+        setState(() { _left = Duration.zero; });
+      }
+      _completeAndLock(); // No need for a ticker
+      return;
+    }
+
+    _ticker = Timer.periodic(const Duration(seconds: 1), (timer) async {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      final Duration nextDuration = _left - const Duration(seconds: 1);
+
+      if (nextDuration.isNegative || nextDuration == Duration.zero) {
+        timer.cancel();
+        if (mounted) {
+          setState(() => _left = Duration.zero);
+        }
         await _completeAndLock();
       } else {
-        setState(() => _left = next);
+        if (mounted) {
+          setState(() => _left = nextDuration);
+        }
       }
     });
   }
 
   Future<void> _completeAndLock() async {
+    _ticker?.cancel();
+    _ap.stop(); // Stop audio if it was playing
+
     // Write mission log
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -148,23 +184,30 @@ class _MissionFlowState extends State<MissionFlow> {
           'completedAt': FieldValue.serverTimestamp(),
         });
       }
-    } catch (_) {
+    } catch (e) {
       // non-fatal
     }
 
     if (!mounted) return;
 
     // Show celebration for ~6 seconds, then go to Locked
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const _Celebration(seconds: 6),
-    );
+    if (context.mounted) {
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const _Celebration(seconds: 6),
+      );
+    }
 
     // Mark complete (session lifecycle) and go to lock
-    await SessionService.instance.complete();
+    try {
+      await SessionService.instance.complete();
+    } catch(e) {}
+
     if (!mounted) return;
-    Navigator.of(context).pushReplacementNamed('/locked');
+    if (context.mounted) {
+      Navigator.of(context).pushReplacementNamed('/locked');
+    }
   }
 
   String _fmt(Duration d) {
@@ -179,84 +222,285 @@ class _MissionFlowState extends State<MissionFlow> {
     final cs = Theme.of(context).colorScheme;
 
     if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.blue.shade50,
+                Colors.purple.shade50,
+              ],
+            ),
+          ),
+          child: Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
+            ),
+          ),
+        ),
       );
     }
 
     if (_error != null) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Mission'),
-          automaticallyImplyLeading: false, // no back
+          title: const Text('Error'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          foregroundColor: cs.primary,
         ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              _error!,
-              style: TextStyle(color: cs.error),
-              textAlign: TextAlign.center,
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.blue.shade50,
+                Colors.purple.shade50,
+              ],
+            ),
+          ),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, color: cs.error, size: 48),
+                  const SizedBox(height: 16),
+                  Text(
+                    _error!,
+                    style: TextStyle(color: cs.error, fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                      } else {
+                        Navigator.pushReplacementNamed(context, '/');
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: cs.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                    child: const Text('Go Back'),
+                  )
+                ],
+              ),
             ),
           ),
         ),
       );
     }
 
-    return WillPopScope(
-      onWillPop: () async => false, // disable system back
+    return PopScope(
+      canPop: false, // Prevent back navigation during mission
       child: Scaffold(
         appBar: AppBar(
-          title: Text(_title),
-          automaticallyImplyLeading: false, // hide back chevron
+          title: Text(
+            _title,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 22,
+            ),
+          ),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          foregroundColor: cs.primary,
+          automaticallyImplyLeading: false,
         ),
-        body: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const _Mascot(),
-                  const SizedBox(height: 16),
-                  Text(
-                    _prompt,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    _fmt(_left),
-                    style: Theme.of(context)
-                        .textTheme
-                        .displaySmall
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Complete your mission!',
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                ],
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.blue.shade50,
+                Colors.purple.shade50,
+              ],
+            ),
+          ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Beautiful mascot image with decorative elements
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Decorative background circles
+                        Container(
+                          width: 200,
+                          height: 200,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [
+                                cs.primary.withOpacity(0.2),
+                                cs.primary.withOpacity(0.05),
+                              ],
+                              stops: const [0.1, 1.0],
+                            ),
+                          ),
+                        ),
+                        Container(
+                          width: 180,
+                          height: 180,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [
+                                cs.primary.withOpacity(0.15),
+                                cs.primary.withOpacity(0.05),
+                              ],
+                              stops: const [0.1, 1.0],
+                            ),
+                          ),
+                        ),
+                        // Mascot image container with shadow and border
+                        Container(
+                          width: 160,
+                          height: 160,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.15),
+                                blurRadius: 15,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                            border: Border.all(
+                              color: cs.primary.withOpacity(0.3),
+                              width: 3,
+                            ),
+                          ),
+                          child: ClipOval(
+                            child: Image.asset(
+                              'assets/images/milo_fox.png',
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, error, stackTrace) {
+                                return Icon(
+                                  Icons.face,
+                                  size: 80,
+                                  color: cs.primary,
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                        // Decorative elements
+                        Positioned(
+                          top: 10,
+                          right: 10,
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.amber.withOpacity(0.7),
+                            ),
+                            child: Icon(
+                              Icons.star,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 10,
+                          left: 10,
+                          child: Container(
+                            width: 30,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.green.withOpacity(0.7),
+                            ),
+                            child: Icon(
+                              Icons.favorite,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            _prompt,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: cs.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: cs.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(
+                              _fmt(_left),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .displayLarge
+                                  ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: cs.primary,
+                                fontSize: 48,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Complete your mission!',
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: cs.onSurfaceVariant,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
       ),
-    );
-  }
-}
-
-class _Mascot extends StatelessWidget {
-  const _Mascot();
-
-  @override
-  Widget build(BuildContext context) {
-    return Image.asset(
-      'assets/images/milo_fox.png',
-      height: 120,
-      errorBuilder: (_, __, ___) => const Icon(Icons.celebration, size: 96),
     );
   }
 }
@@ -270,46 +514,114 @@ class _Celebration extends StatefulWidget {
 }
 
 class _CelebrationState extends State<_Celebration> {
+  Timer? _dialogTimer;
+
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration(seconds: widget.seconds), () {
-      if (mounted) Navigator.of(context).pop(); // close dialog → continue flow
+    _dialogTimer = Timer(Duration(seconds: widget.seconds), () {
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.of(context).pop();
+      }
     });
+  }
+
+  @override
+  void dispose() {
+    _dialogTimer?.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Lottie celebration (falls back to icon if asset missing at build time)
-            SizedBox(
-              height: 180,
-              child: Lottie.asset(
-                'assets/lottie/celebrate.json',
-                repeat: true,
-                fit: BoxFit.contain,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Amazing job!',
-              style: Theme.of(context).textTheme.titleLarge,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              "We'll go on another mission tomorrow.",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: cs.onSurfaceVariant),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
             ),
           ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Celebration image with decorative elements
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 140,
+                    height: 140,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          Colors.amber.withOpacity(0.2),
+                          Colors.amber.withOpacity(0.05),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: Lottie.asset(
+                        'assets/lottie/celebrate.json',
+                        repeat: true,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Icon(
+                            Icons.celebration,
+                            size: 60,
+                            color: cs.primary,
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Amazing job!',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: cs.primary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                "We'll go on another mission tomorrow.",
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey.shade700,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

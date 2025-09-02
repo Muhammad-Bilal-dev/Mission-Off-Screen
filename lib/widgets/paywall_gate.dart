@@ -1,3 +1,4 @@
+// lib/widgets/paywall_gate.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -9,13 +10,13 @@ import '../screens/paywall_screen.dart';
 ///
 /// Final logic:
 /// 1) If there is a global free window (App_Config/global.freeUntil in the future) → allow all.
-/// 2) Else, allow only if user.earlyAdopter == true OR user.subscriptionStatus == 'premium'.
+/// 2) Else, allow only if user.earlyAdopter == true OR user.isSubscriber == true
+///    OR user.subscriptionStatus == 'premium'.
 /// 3) Otherwise show PaywallScreen.
 ///
 /// NOTE:
-/// - We intentionally do NOT use paywallEnabled at runtime to bypass,
-///   so toggling paywallEnabled will NOT unlock the app for everyone.
-/// - SignupScreen should still use paywallEnabled to set earlyAdopter for new accounts.
+/// - paywallEnabled is only used at signup time to set earlyAdopter.
+/// - Toggling paywallEnabled does not unlock existing users; that's by design.
 class PaywallGate extends StatelessWidget {
   const PaywallGate({super.key, required this.child});
   final Widget child;
@@ -24,8 +25,7 @@ class PaywallGate extends StatelessWidget {
   Widget build(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
-      // Not signed in — upstream AuthGate should handle routing.
-      // We just show the child to avoid loops.
+      // Not signed in — upstream AuthGate handles routing.
       return child;
     }
 
@@ -36,25 +36,20 @@ class PaywallGate extends StatelessWidget {
       stream: cfgRef.snapshots(),
       builder: (context, cfgSnap) {
         if (!cfgSnap.hasData) {
-          // Light skeleton while config loads
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
 
         final cfg = cfgSnap.data!.data() ?? {};
 
-        // Optional: global free window for promos
-        bool globalFree = false;
+        // Optional promo window
+        var globalFree = false;
         final ts = cfg['freeUntil'];
         if (ts is Timestamp) {
           globalFree = DateTime.now().isBefore(ts.toDate());
         }
+        if (globalFree) return child;
 
-        if (globalFree) {
-          // During a promo window, everyone can access.
-          return child;
-        }
-
-        // Otherwise, gate per user
+        // Otherwise, per-user gate
         return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
           stream: userRef.snapshots(),
           builder: (context, userSnap) {
@@ -64,14 +59,15 @@ class PaywallGate extends StatelessWidget {
 
             final u = userSnap.data!.data() ?? {};
             final earlyAdopter = (u['earlyAdopter'] as bool?) ?? false;
-            final subscriptionStatus = (u['subscriptionStatus'] as String?) ?? 'none';
-            final isPremium = subscriptionStatus == 'premium';
 
-            if (earlyAdopter || isPremium) {
+            // Support both shapes
+            final isSubscriberBool = (u['isSubscriber'] as bool?) ?? false;
+            final subscriptionStatus = (u['subscriptionStatus'] as String?) ?? 'none';
+            final isSubscriber = isSubscriberBool || subscriptionStatus == 'premium';
+
+            if (earlyAdopter || isSubscriber) {
               return child;
             }
-
-            // Not early & not premium → paywall
             return const PaywallScreen();
           },
         );
