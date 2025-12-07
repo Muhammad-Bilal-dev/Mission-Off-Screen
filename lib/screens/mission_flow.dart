@@ -6,6 +6,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../utils/app_logger.dart';
 import 'package:lottie/lottie.dart';
 
 import '../services/notifications.dart';
@@ -199,7 +200,9 @@ class _MissionFlowState extends State<MissionFlow> {
     // Mark complete (session lifecycle) and go to lock
     try {
       await SessionService.instance.complete();
-    } catch (e) {}
+    } catch (e) {
+      AppLogger.log("Error in mission flow tick: $e");
+    }
 
     if (!mounted) return;
     if (context.mounted) {

@@ -24,7 +24,9 @@ class SessionService {
   Stream<Map<String, dynamic>?> watchRaw() {
     // AppLogger.log('[SessionService_LOG] watchRaw() called.');
     final c = _col;
-    if (c == null) return const Stream.empty();
+    if (c == null) {
+      return const Stream.empty();
+    }
     return c.orderBy('startAt', descending: true).limit(1).snapshots().map(
           (snap) => snap.docs.isEmpty ? null : snap.docs.first.data(),
         );
@@ -160,8 +162,9 @@ class SessionService {
     AppLogger.log(
         '[SessionService_LOG] Original endAt: $originalEndAt, PausedAt: $timeWhenPaused, Now: $now, New Target EndAt: $newTargetEndAt, Time Remaining For Notification: $timeRemainingForNotification');
 
-    if (timeRemainingForNotification.isNegative)
+    if (timeRemainingForNotification.isNegative) {
       timeRemainingForNotification = Duration.zero;
+    }
 
     if (timeRemainingForNotification > Duration.zero) {
       AppLogger.log(
@@ -247,10 +250,12 @@ class SessionService {
       await last.reference.delete();
       AppLogger.log('[SessionService_LOG] Session deleted from Firestore.');
     } catch (e, s) {
-      print('[SessionService_LOG] ERROR deleting session from Firestore: $e');
-      print('[SessionService_LOG] Stack trace for Firestore delete error: $s');
+      AppLogger.log(
+          '[SessionService_LOG] ERROR deleting session from Firestore: $e');
+      AppLogger.log(
+          '[SessionService_LOG] Stack trace for Firestore delete error: $s');
     }
-    print('[SessionService_LOG] cancel() finished.');
+    AppLogger.log('[SessionService_LOG] cancel() finished.');
   }
 
   Future<QueryDocumentSnapshot<Map<String, dynamic>>?> _latestDoc() async {
@@ -263,8 +268,9 @@ class SessionService {
       }
       return q.docs.first;
     } catch (e, s) {
-      print('[SessionService_LOG] ERROR fetching latest document: $e');
-      print('[SessionService_LOG] Stack trace for _latestDoc error: $s');
+      AppLogger.log('[SessionService_LOG] ERROR fetching latest document: $e');
+      AppLogger.log(
+          '[SessionService_LOG] Stack trace for _latestDoc error: $s');
       return null;
     }
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
+import '../utils/app_logger.dart';
 
 import '../screens/overlay_mission_screen.dart';
 
@@ -31,8 +32,9 @@ class OverlayService {
         height: WindowSize.fullCover,
         width: WindowSize.fullCover,
       );
+      AppLogger.log("[OverlayService] showOverlay called successfully.");
     } else {
-      debugPrint("Overlay permission not granted.");
+      AppLogger.log("[OverlayService] Overlay permission not granted.");
     }
   }
 
@@ -45,6 +47,8 @@ class OverlayService {
 @pragma("vm:entry-point")
 void overlayMain() {
   WidgetsFlutterBinding.ensureInitialized();
+  AppLogger.log(
+      "[OverlayMission] overlayMain() STARTING - attaching to window");
   runApp(
     const MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -56,6 +60,7 @@ void overlayMain() {
 // Background callback for AndroidAlarmManager
 @pragma('vm:entry-point')
 void overlayAlarmCallback() {
-  debugPrint("[OverlayService] Alarm fired! Attempting to show overlay...");
+  WidgetsFlutterBinding.ensureInitialized();
+  AppLogger.log("[OverlayService] Alarm fired! Attempting to show overlay...");
   OverlayService.instance.showOverlay();
 }

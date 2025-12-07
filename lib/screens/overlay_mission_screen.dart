@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
+import '../utils/app_logger.dart';
 
 class OverlayMissionScreen extends StatefulWidget {
   const OverlayMissionScreen({super.key});
@@ -10,7 +11,15 @@ class OverlayMissionScreen extends StatefulWidget {
 
 class _OverlayMissionScreenState extends State<OverlayMissionScreen> {
   @override
+  void initState() {
+    super.initState();
+    AppLogger.log(
+        "[OverlayMissionScreen] initState() called - View is being created");
+  }
+
+  @override
   Widget build(BuildContext context) {
+    AppLogger.log("[OverlayMissionScreen] build() called");
     return Scaffold(
       backgroundColor:
           const Color(0xFFD5CBBD), // Solid color to ensure visibility

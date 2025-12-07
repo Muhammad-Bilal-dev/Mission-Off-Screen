@@ -125,6 +125,7 @@ class ChildrenListScreen extends StatelessWidget {
 
     if (confirm == true) {
       await child.reference.delete();
+      if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

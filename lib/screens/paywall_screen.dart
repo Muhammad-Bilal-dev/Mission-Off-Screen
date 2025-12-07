@@ -1,6 +1,7 @@
 // lib/screens/paywall_screen.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../utils/app_logger.dart';
 
 class PaywallScreen extends StatelessWidget {
   const PaywallScreen({super.key});
@@ -8,7 +9,9 @@ class PaywallScreen extends StatelessWidget {
   Future<void> _goToLogin(BuildContext context) async {
     try {
       await FirebaseAuth.instance.signOut();
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.log("Paywall initialization error: $e");
+    }
     if (context.mounted) {
       Navigator.of(context).pushNamedAndRemoveUntil('/login', (r) => false);
     }

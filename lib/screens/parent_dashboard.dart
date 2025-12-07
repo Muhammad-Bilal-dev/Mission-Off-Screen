@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import '../services/session_service.dart';
 import '../services/notifications.dart';
 import '../services/overlay_service.dart';
+import '../utils/app_logger.dart';
 
 class ParentDashboard extends StatefulWidget {
   const ParentDashboard({super.key});
@@ -39,8 +40,9 @@ class _ParentDashboardState extends State<ParentDashboard> {
       final status = await OverlayService.instance.checkPermission();
       if (mounted) setState(() => _overlayPermission = status);
     } else {
-      if (mounted)
+      if (mounted) {
         setState(() => _overlayPermission = true); // Not needed on iOS
+      }
     }
   }
 
@@ -78,7 +80,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
         });
       }
     } catch (e) {
-      print('Error fetching current PIN: $e');
+      AppLogger.log('Error fetching current PIN: $e');
     }
   }
 
@@ -565,6 +567,8 @@ class _ParentDashboardState extends State<ParentDashboard> {
     if (_currentPin.isEmpty) {
       await _fetchCurrentPin();
     }
+
+    if (!mounted) return;
 
     final bool? pinWasSet = await showDialog<bool>(
       context: context,

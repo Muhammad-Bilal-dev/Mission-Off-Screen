@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'utils/app_logger.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -19,8 +20,6 @@ import 'widgets/paywall_gate.dart';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
-
-
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,7 +46,9 @@ Future<void> _initFirebase() async {
     } else {
       Firebase.app();
     }
-  } catch (_) {}
+  } catch (e) {
+    AppLogger.log("Firebase init failed: $e");
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -75,7 +76,7 @@ class MyApp extends StatelessWidget {
         '/children': (_) => const ChildrenListScreen(),
         '/missionComplete': (ctx) {
           final args = (ModalRoute.of(ctx)?.settings.arguments
-          as Map<String, dynamic>?) ??
+                  as Map<String, dynamic>?) ??
               {};
           final childName = (args['childName'] as String?) ?? 'buddy';
           return MissionCompleteScreen(childName: childName);
