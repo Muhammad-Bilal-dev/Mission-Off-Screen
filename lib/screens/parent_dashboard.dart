@@ -2,10 +2,12 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../services/session_service.dart';
 import '../services/notifications.dart';
+import '../services/overlay_service.dart';
 
 class ParentDashboard extends StatefulWidget {
   const ParentDashboard({super.key});
@@ -22,12 +24,24 @@ class _ParentDashboardState extends State<ParentDashboard> {
   String _childName = '';
   String _childId = '';
   String _currentPin = '';
+  bool _overlayPermission = false;
 
   @override
   void initState() {
     super.initState();
     _watchUser();
     _fetchCurrentPin();
+    _checkOverlayPermission();
+  }
+
+  Future<void> _checkOverlayPermission() async {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final status = await OverlayService.instance.checkPermission();
+      if (mounted) setState(() => _overlayPermission = status);
+    } else {
+      if (mounted)
+        setState(() => _overlayPermission = true); // Not needed on iOS
+    }
   }
 
   @override
@@ -40,7 +54,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
     FirebaseFirestore.instance.collection('users').doc(uid).snapshots().listen(
-          (doc) {
+      (doc) {
         if (!mounted) return;
         final data = doc.data();
         setState(() {
@@ -56,7 +70,8 @@ class _ParentDashboardState extends State<ParentDashboard> {
     if (uid == null) return;
 
     try {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final doc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
       if (doc.exists) {
         setState(() {
           _currentPin = (doc.data()?['parentPin'] as String?) ?? '0000';
@@ -117,7 +132,6 @@ class _ParentDashboardState extends State<ParentDashboard> {
           }
         }
       });
-
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -128,7 +142,6 @@ class _ParentDashboardState extends State<ParentDashboard> {
         _remaining = Duration.zero;
         setState(() {});
       }
-      return;
     }
   }
 
@@ -149,7 +162,8 @@ class _ParentDashboardState extends State<ParentDashboard> {
       label: Text(
         label,
         style: TextStyle(
-          color: selected ? Colors.white : Theme.of(context).colorScheme.primary,
+          color:
+              selected ? Colors.white : Theme.of(context).colorScheme.primary,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -159,7 +173,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
           width: 1.5,
         ),
       ),
@@ -219,6 +233,37 @@ class _ParentDashboardState extends State<ParentDashboard> {
           padding: const EdgeInsets.all(16),
           child: ListView(
             children: [
+              // Permission Warning
+              if (!_overlayPermission &&
+                  defaultTargetPlatform == TargetPlatform.android)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.orange.shade300),
+                    ),
+                    child: ListTile(
+                      leading: Icon(Icons.warning_amber_rounded,
+                          color: Colors.orange.shade800),
+                      title: const Text('Permission Required'),
+                      subtitle: const Text(
+                          'Grant "Display over other apps" to lock screen.'),
+                      trailing: FilledButton(
+                        onPressed: () async {
+                          await OverlayService.instance.requestPermission();
+                          // Wait a bit or listen to lifecycle to recheck
+                          // specific to app lifecycle usually, but here we can just recheck after return
+                          await Future.delayed(const Duration(seconds: 1));
+                          await _checkOverlayPermission();
+                        },
+                        child: const Text('Grant'),
+                      ),
+                    ),
+                  ),
+                ),
+
               // Child Profile Card
               Container(
                 decoration: BoxDecoration(
@@ -226,14 +271,14 @@ class _ParentDashboardState extends State<ParentDashboard> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      cs.primaryContainer.withOpacity(0.7),
-                      cs.secondaryContainer.withOpacity(0.7),
+                      cs.primaryContainer.withValues(alpha: 0.7),
+                      cs.secondaryContainer.withValues(alpha: 0.7),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -255,7 +300,8 @@ class _ParentDashboardState extends State<ParentDashboard> {
                             ),
                             child: Center(
                               child: Text(
-                                (_childName.isEmpty ? 'T' : _childName[0]).toUpperCase(),
+                                (_childName.isEmpty ? 'T' : _childName[0])
+                                    .toUpperCase(),
                                 style: TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
@@ -306,7 +352,8 @@ class _ParentDashboardState extends State<ParentDashboard> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 10),
                             ),
                           ),
                           ElevatedButton.icon(
@@ -320,7 +367,8 @@ class _ParentDashboardState extends State<ParentDashboard> {
                                 borderRadius: BorderRadius.circular(12),
                                 side: BorderSide(color: cs.primary, width: 1.5),
                               ),
-                              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 10),
                             ),
                           ),
                         ],
@@ -338,7 +386,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 15,
                       offset: const Offset(0, 5),
                     ),
@@ -379,14 +427,30 @@ class _ParentDashboardState extends State<ParentDashboard> {
                         spacing: 10,
                         runSpacing: 10,
                         children: [
-                          _durChip(duration: const Duration(seconds: 30), label: '30 sec'),
-                          _durChip(duration: const Duration(minutes: 5), label: '5 min'),
-                          _durChip(duration: const Duration(minutes: 10), label: '10 min'),
-                          _durChip(duration: const Duration(minutes: 15), label: '15 min'),
-                          _durChip(duration: const Duration(minutes: 20), label: '20 min'),
-                          _durChip(duration: const Duration(minutes: 30), label: '30 min'),
-                          _durChip(duration: const Duration(minutes: 45), label: '45 min'),
-                          _durChip(duration: const Duration(hours: 1), label: '60 min'),
+                          _durChip(
+                              duration: const Duration(seconds: 30),
+                              label: '30 sec'),
+                          _durChip(
+                              duration: const Duration(minutes: 5),
+                              label: '5 min'),
+                          _durChip(
+                              duration: const Duration(minutes: 10),
+                              label: '10 min'),
+                          _durChip(
+                              duration: const Duration(minutes: 15),
+                              label: '15 min'),
+                          _durChip(
+                              duration: const Duration(minutes: 20),
+                              label: '20 min'),
+                          _durChip(
+                              duration: const Duration(minutes: 30),
+                              label: '30 min'),
+                          _durChip(
+                              duration: const Duration(minutes: 45),
+                              label: '45 min'),
+                          _durChip(
+                              duration: const Duration(hours: 1),
+                              label: '60 min'),
                         ],
                       ),
                       const SizedBox(height: 24),
@@ -395,6 +459,15 @@ class _ParentDashboardState extends State<ParentDashboard> {
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: _startTimer,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: cs.primary,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 3,
+                              shadowColor: cs.primary.withValues(alpha: 0.4),
+                            ),
                             child: Padding(
                               padding: const EdgeInsets.all(16.0),
                               child: Text(
@@ -405,15 +478,6 @@ class _ParentDashboardState extends State<ParentDashboard> {
                                 ),
                               ),
                             ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: cs.primary,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              elevation: 3,
-                              shadowColor: cs.primary.withOpacity(0.4),
-                            ),
                           ),
                         ),
                       ] else ...[
@@ -422,7 +486,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
                             Container(
                               padding: EdgeInsets.all(20),
                               decoration: BoxDecoration(
-                                color: cs.primary.withOpacity(0.1),
+                                color: cs.primary.withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Stack(
@@ -432,10 +496,13 @@ class _ParentDashboardState extends State<ParentDashboard> {
                                     width: 180,
                                     height: 180,
                                     child: CircularProgressIndicator(
-                                      value: 1 - (_remaining.inSeconds / _selectedDuration.inSeconds),
+                                      value: 1 -
+                                          (_remaining.inSeconds /
+                                              _selectedDuration.inSeconds),
                                       strokeWidth: 8,
                                       backgroundColor: Colors.grey.shade300,
-                                      valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          cs.primary),
                                     ),
                                   ),
                                   Text(
@@ -454,6 +521,13 @@ class _ParentDashboardState extends State<ParentDashboard> {
                               width: double.infinity,
                               child: OutlinedButton(
                                 onPressed: _cancel,
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(
+                                      color: Colors.red.shade400, width: 1.5),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
                                 child: Padding(
                                   padding: const EdgeInsets.all(14.0),
                                   child: Text(
@@ -462,12 +536,6 @@ class _ParentDashboardState extends State<ParentDashboard> {
                                       fontSize: 16,
                                       color: Colors.red.shade700,
                                     ),
-                                  ),
-                                ),
-                                style: OutlinedButton.styleFrom(
-                                  side: BorderSide(color: Colors.red.shade400, width: 1.5),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
                                   ),
                                 ),
                               ),
@@ -504,114 +572,118 @@ class _ParentDashboardState extends State<ParentDashboard> {
         String? err;
         return StatefulBuilder(
             builder: (BuildContext sbfContext, StateSetter setDialogState) {
-              return Dialog(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Change Parent PIN',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.info_outline, color: Colors.blue.shade700, size: 18),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Current PIN: $_currentPin',
-                                style: TextStyle(
-                                  color: Colors.blue.shade700,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Change Parent PIN',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline,
+                            color: Colors.blue.shade700, size: 18),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Current PIN: $_currentPin',
+                            style: TextStyle(
+                              color: Colors.blue.shade700,
+                              fontWeight: FontWeight.w600,
                             ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: ctrl,
-                        keyboardType: TextInputType.number,
-                        maxLength: 4,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          labelText: 'New 4-digit PIN',
-                          errorText: err,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
                           ),
-                          filled: true,
-                          fillColor: Colors.grey.shade50,
                         ),
-                        onChanged: (_) {
-                          if (err != null) {
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: ctrl,
+                    keyboardType: TextInputType.number,
+                    maxLength: 4,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: 'New 4-digit PIN',
+                      errorText: err,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                    ),
+                    onChanged: (_) {
+                      if (err != null) {
+                        setDialogState(() {
+                          err = null;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(dialogContext, false);
+                        },
+                        child: Text('Cancel'),
+                      ),
+                      const SizedBox(width: 10),
+                      ElevatedButton(
+                        onPressed: () async {
+                          final v = ctrl.text.trim();
+                          if (v.length != 4 || int.tryParse(v) == null) {
                             setDialogState(() {
-                              err = null;
+                              err = 'Enter 4 digits';
                             });
+                            return;
+                          }
+                          await FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(uid)
+                              .set(
+                            {'parentPin': v},
+                            SetOptions(merge: true),
+                          );
+                          if (dialogContext.mounted) {
+                            Navigator.pop(dialogContext, true);
                           }
                         },
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pop(dialogContext, false);
-                            },
-                            child: Text('Cancel'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          const SizedBox(width: 10),
-                          ElevatedButton(
-                            onPressed: () async {
-                              final v = ctrl.text.trim();
-                              if (v.length != 4 || int.tryParse(v) == null) {
-                                setDialogState(() {
-                                  err = 'Enter 4 digits';
-                                });
-                                return;
-                              }
-                              await FirebaseFirestore.instance.collection('users').doc(uid).set(
-                                {'parentPin': v},
-                                SetOptions(merge: true),
-                              );
-                              if (dialogContext.mounted) {
-                                Navigator.pop(dialogContext, true);
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).colorScheme.primary,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: Text('Save'),
-                          ),
-                        ],
+                        ),
+                        child: Text('Save'),
                       ),
                     ],
                   ),
-                ),
-              );
-            }
-        );
+                ],
+              ),
+            ),
+          );
+        });
       },
     );
 

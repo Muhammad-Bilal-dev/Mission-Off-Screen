@@ -24,7 +24,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _signIn() async {
     if (!_form.currentState!.validate()) return;
-    setState(() { _busy = true; _err = null; });
+    setState(() {
+      _busy = true;
+      _err = null;
+    });
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _email.text.trim(),
@@ -73,7 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 15,
                             offset: const Offset(0, 5),
                           ),
@@ -87,16 +90,16 @@ class _LoginScreenState extends State<LoginScreen> {
                             height: 120,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: cs.primary.withOpacity(0.1),
+                              color: cs.primary.withValues(alpha: 0.1),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
+                                  color: Colors.black.withValues(alpha: 0.1),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
                               ],
                               border: Border.all(
-                                color: cs.primary.withOpacity(0.3),
+                                color: cs.primary.withValues(alpha: 0.3),
                                 width: 2,
                               ),
                             ),
@@ -117,10 +120,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 16),
                           Text(
                             'Welcome Back!',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: cs.primary,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: cs.primary,
+                                ),
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -143,7 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 15,
                             offset: const Offset(0, 5),
                           ),
@@ -156,7 +162,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             if (_err != null)
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 10),
                                 decoration: BoxDecoration(
                                   color: Colors.red.shade50,
                                   borderRadius: BorderRadius.circular(8),
@@ -167,7 +174,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.error_outline, color: Colors.red.shade700, size: 16),
+                                    Icon(Icons.error_outline,
+                                        color: Colors.red.shade700, size: 16),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
@@ -188,14 +196,17 @@ class _LoginScreenState extends State<LoginScreen> {
                               textInputAction: TextInputAction.next,
                               decoration: InputDecoration(
                                 labelText: 'Email',
-                                prefixIcon: Icon(Icons.email_outlined, color: cs.primary),
+                                prefixIcon: Icon(Icons.email_outlined,
+                                    color: cs.primary),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 filled: true,
                                 fillColor: Colors.grey.shade50,
                               ),
-                              validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
+                              validator: (v) => (v == null || !v.contains('@'))
+                                  ? 'Enter a valid email'
+                                  : null,
                             ),
                             const SizedBox(height: 16),
                             TextFormField(
@@ -203,11 +214,15 @@ class _LoginScreenState extends State<LoginScreen> {
                               obscureText: _hide,
                               decoration: InputDecoration(
                                 labelText: 'Password',
-                                prefixIcon: Icon(Icons.lock_outline, color: cs.primary),
+                                prefixIcon:
+                                    Icon(Icons.lock_outline, color: cs.primary),
                                 suffixIcon: IconButton(
-                                  onPressed: () => setState(() => _hide = !_hide),
+                                  onPressed: () =>
+                                      setState(() => _hide = !_hide),
                                   icon: Icon(
-                                    _hide ? Icons.visibility_off : Icons.visibility,
+                                    _hide
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
                                     color: cs.primary,
                                   ),
                                 ),
@@ -217,7 +232,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 filled: true,
                                 fillColor: Colors.grey.shade50,
                               ),
-                              validator: (v) => (v == null || v.length < 6) ? 'Min 6 characters' : null,
+                              validator: (v) => (v == null || v.length < 6)
+                                  ? 'Min 6 characters'
+                                  : null,
                               onFieldSubmitted: (_) => _signIn(),
                             ),
                             const SizedBox(height: 24),
@@ -231,31 +248,36 @@ class _LoginScreenState extends State<LoginScreen> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
                                   elevation: 3,
-                                  shadowColor: cs.primary.withOpacity(0.4),
+                                  shadowColor:
+                                      cs.primary.withValues(alpha: 0.4),
                                 ),
                                 child: _busy
                                     ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                  ),
-                                )
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                  Colors.white),
+                                        ),
+                                      )
                                     : const Text(
-                                  'Sign In',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                                        'Sign In',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                               ),
                             ),
                             const SizedBox(height: 16),
                             TextButton(
-                              onPressed: () => Navigator.of(context).pushReplacementNamed('/signup'),
+                              onPressed: () => Navigator.of(context)
+                                  .pushReplacementNamed('/signup'),
                               child: RichText(
                                 text: TextSpan(
                                   style: TextStyle(

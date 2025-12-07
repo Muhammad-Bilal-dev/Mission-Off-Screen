@@ -32,17 +32,21 @@
     <!-- <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" /> -->
 
 
+    <!-- Screen Override & Background execution -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
     <application
         android:label="Mission Off-Screen"
         android:icon="@mipmap/ic_launcher" >
-        <!-- android:name="${applicationName}" is often injected by Flutter build tools.
-             If you have a custom Application class, specify it here, e.g., ".MyApplication".
-             If it causes build issues and you don't have a custom class, you might be able to remove it. -->
-
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
@@ -58,37 +62,50 @@
             </intent-filter>
         </activity>
 
-        <!-- flutter_local_notifications plugin receivers -->
-        <!-- ======================================================================================= -->
-        <!-- IMPORTANT: VERIFY THESE DECLARATIONS with the OFFICIAL DOCUMENTATION of the            -->
-        <!--            `flutter_local_notifications` plugin version you are using.                -->
-        <!--            The receiver names and `android:exported` status can change.               -->
-        <!-- ======================================================================================= -->
+        <!-- flutter_overlay_window service -->
+        <service 
+            android:name="flutter.overlay.window.flutter_overlay_window.OverlayService" 
+            android:exported="false" 
+            android:foregroundServiceType="specialUse" />
 
+        <!-- android_alarm_manager_plus service and receivers -->
+        <service
+            android:name="dev.fluttercommunity.plus.androidalarmmanager.AlarmService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="false"/>
+        <receiver
+            android:name="dev.fluttercommunity.plus.androidalarmmanager.AlarmBroadcastReceiver"
+            android:exported="false"/>
+        <receiver
+            android:name="dev.fluttercommunity.plus.androidalarmmanager.RebootBroadcastReceiver"
+            android:enabled="false"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
+
+        <!-- flutter_local_notifications plugin receivers -->
         <receiver
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
             android:exported="false" />
 
         <receiver
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
-            android:exported="true"> <!-- Must be exported="true" to receive system broadcasts like BOOT_COMPLETED -->
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
-                <!-- The following are for specific OEM fast boot modes, often good to include -->
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
                 <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
             </intent-filter>
         </receiver>
-        <!-- End of flutter_local_notifications receivers -->
 
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
 
-    <!-- Required for apps targeting Android 12 (API level 31) and higher if they use exact alarms
-         and need to query for services that can handle the exact alarm permission. -->
     <queries>
         <intent>
             <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION" />

@@ -57,9 +57,7 @@ class _MissionFlowState extends State<MissionFlow> {
   Future<void> _bootstrap() async {
     try {
       // Clear any stray notifications now that we're in the app.
-      NotificationService.instance.cancelAll().then((_) {
-      }).catchError((e) {
-      });
+      NotificationService.instance.cancelAll().then((_) {}).catchError((e) {});
 
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) {
@@ -73,7 +71,7 @@ class _MissionFlowState extends State<MissionFlow> {
 
       // 1) Active child name
       final userDoc =
-      await FirebaseFirestore.instance.collection('users').doc(uid).get();
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
       if (!mounted) return;
       final name = (userDoc.data()?['activeChildName'] as String?)?.trim();
       _childName = (name == null || name.isEmpty) ? 'buddy' : name;
@@ -112,11 +110,8 @@ class _MissionFlowState extends State<MissionFlow> {
 
       // 4) Play audio (optionally) without awaiting it before ticker starts
       if (_audioUrl.isNotEmpty) {
-        _ap.play(UrlSource(_audioUrl)).then((_) {
-        }).catchError((e) {
-        });
+        _ap.play(UrlSource(_audioUrl)).then((_) {}).catchError((e) {});
       }
-
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -137,7 +132,9 @@ class _MissionFlowState extends State<MissionFlow> {
     // If duration is zero or less, complete immediately
     if (_left <= Duration.zero) {
       if (mounted) {
-        setState(() { _left = Duration.zero; });
+        setState(() {
+          _left = Duration.zero;
+        });
       }
       _completeAndLock(); // No need for a ticker
       return;
@@ -202,7 +199,7 @@ class _MissionFlowState extends State<MissionFlow> {
     // Mark complete (session lifecycle) and go to lock
     try {
       await SessionService.instance.complete();
-    } catch(e) {}
+    } catch (e) {}
 
     if (!mounted) return;
     if (context.mounted) {
@@ -290,7 +287,8 @@ class _MissionFlowState extends State<MissionFlow> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
                     ),
                     child: const Text('Go Back'),
                   )
@@ -349,8 +347,8 @@ class _MissionFlowState extends State<MissionFlow> {
                             shape: BoxShape.circle,
                             gradient: RadialGradient(
                               colors: [
-                                cs.primary.withOpacity(0.2),
-                                cs.primary.withOpacity(0.05),
+                                cs.primary.withValues(alpha: 0.2),
+                                cs.primary.withValues(alpha: 0.05),
                               ],
                               stops: const [0.1, 1.0],
                             ),
@@ -363,8 +361,8 @@ class _MissionFlowState extends State<MissionFlow> {
                             shape: BoxShape.circle,
                             gradient: RadialGradient(
                               colors: [
-                                cs.primary.withOpacity(0.15),
-                                cs.primary.withOpacity(0.05),
+                                cs.primary.withValues(alpha: 0.15),
+                                cs.primary.withValues(alpha: 0.05),
                               ],
                               stops: const [0.1, 1.0],
                             ),
@@ -379,13 +377,13 @@ class _MissionFlowState extends State<MissionFlow> {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.15),
+                                color: Colors.black.withValues(alpha: 0.15),
                                 blurRadius: 15,
                                 offset: const Offset(0, 5),
                               ),
                             ],
                             border: Border.all(
-                              color: cs.primary.withOpacity(0.3),
+                              color: cs.primary.withValues(alpha: 0.3),
                               width: 3,
                             ),
                           ),
@@ -412,7 +410,7 @@ class _MissionFlowState extends State<MissionFlow> {
                             height: 40,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.amber.withOpacity(0.7),
+                              color: Colors.amber.withValues(alpha: 0.7),
                             ),
                             child: Icon(
                               Icons.star,
@@ -429,7 +427,7 @@ class _MissionFlowState extends State<MissionFlow> {
                             height: 30,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.green.withOpacity(0.7),
+                              color: Colors.green.withValues(alpha: 0.7),
                             ),
                             child: Icon(
                               Icons.favorite,
@@ -448,7 +446,7 @@ class _MissionFlowState extends State<MissionFlow> {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -459,16 +457,19 @@ class _MissionFlowState extends State<MissionFlow> {
                           Text(
                             _prompt,
                             textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: cs.primary,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: cs.primary,
+                                ),
                           ),
                           const SizedBox(height: 24),
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: cs.primary.withOpacity(0.1),
+                              color: cs.primary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Text(
@@ -477,19 +478,20 @@ class _MissionFlowState extends State<MissionFlow> {
                                   .textTheme
                                   .displayLarge
                                   ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: cs.primary,
-                                fontSize: 48,
-                              ),
+                                    fontWeight: FontWeight.bold,
+                                    color: cs.primary,
+                                    fontSize: 48,
+                                  ),
                             ),
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'Complete your mission!',
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: cs.onSurfaceVariant,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style:
+                                Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      color: cs.onSurfaceVariant,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                           ),
                         ],
                       ),
@@ -544,7 +546,7 @@ class _CelebrationState extends State<_Celebration> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withValues(alpha: 0.2),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -566,8 +568,8 @@ class _CelebrationState extends State<_Celebration> {
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
                         colors: [
-                          Colors.amber.withOpacity(0.2),
-                          Colors.amber.withOpacity(0.05),
+                          Colors.amber.withValues(alpha: 0.2),
+                          Colors.amber.withValues(alpha: 0.05),
                         ],
                       ),
                     ),
@@ -580,7 +582,7 @@ class _CelebrationState extends State<_Celebration> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -607,9 +609,9 @@ class _CelebrationState extends State<_Celebration> {
               Text(
                 'Amazing job!',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: cs.primary,
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: cs.primary,
+                    ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
@@ -617,8 +619,8 @@ class _CelebrationState extends State<_Celebration> {
                 "We'll go on another mission tomorrow.",
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey.shade700,
-                ),
+                      color: Colors.grey.shade700,
+                    ),
               ),
             ],
           ),

@@ -60,7 +60,8 @@ class ChildrenListScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 10),
                     ElevatedButton(
-                      onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+                      onPressed: () =>
+                          Navigator.pop(ctx, controller.text.trim()),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: cs.primary,
                         foregroundColor: Colors.white,
@@ -80,7 +81,8 @@ class ChildrenListScreen extends StatelessWidget {
     );
 
     if (name == null || name.isEmpty) return;
-    await _childrenCol().add({'name': name, 'createdAt': FieldValue.serverTimestamp()});
+    await _childrenCol()
+        .add({'name': name, 'createdAt': FieldValue.serverTimestamp()});
   }
 
   Future<void> _setActive(DocumentSnapshot<Map<String, dynamic>> child) async {
@@ -91,7 +93,8 @@ class ChildrenListScreen extends StatelessWidget {
     });
   }
 
-  Future<void> _delete(DocumentSnapshot<Map<String, dynamic>> child, BuildContext context) async {
+  Future<void> _delete(DocumentSnapshot<Map<String, dynamic>> child,
+      BuildContext context) async {
     final name = (child['name'] as String?) ?? 'this child';
 
     final confirm = await showDialog<bool>(
@@ -101,7 +104,8 @@ class ChildrenListScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
         ),
         title: Text('Delete Child'),
-        content: Text('Are you sure you want to remove $name from your family?'),
+        content:
+            Text('Are you sure you want to remove $name from your family?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -219,14 +223,15 @@ class ChildrenListScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
                     ],
                   ),
                   child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     leading: Container(
                       width: 50,
                       height: 50,

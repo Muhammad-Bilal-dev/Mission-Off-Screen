@@ -62,7 +62,7 @@ class PaywallScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 15,
                                 offset: const Offset(0, 5),
                               ),
@@ -76,14 +76,15 @@ class PaywallScreen extends StatelessWidget {
                                 height: 110,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: cs.primary.withOpacity(0.08),
+                                  color: cs.primary.withValues(alpha: 0.08),
                                   border: Border.all(
-                                    color: cs.primary.withOpacity(0.28),
+                                    color: cs.primary.withValues(alpha: 0.28),
                                     width: 2,
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.08),
+                                      color:
+                                          Colors.black.withValues(alpha: 0.08),
                                       blurRadius: 10,
                                       offset: const Offset(0, 4),
                                     ),
@@ -108,9 +109,9 @@ class PaywallScreen extends StatelessWidget {
                                     .textTheme
                                     .headlineSmall
                                     ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: cs.primary,
-                                ),
+                                      fontWeight: FontWeight.bold,
+                                      color: cs.primary,
+                                    ),
                                 textAlign: TextAlign.center,
                               ),
                               const SizedBox(height: 8),
@@ -133,7 +134,7 @@ class PaywallScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 15,
                                 offset: const Offset(0, 5),
                               ),
@@ -147,12 +148,13 @@ class PaywallScreen extends StatelessWidget {
                                 width: double.infinity,
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: cs.primaryContainer.withOpacity(0.6),
+                                  color: cs.primaryContainer
+                                      .withValues(alpha: 0.6),
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                                 child: const Text(
                                   'Early adopters keep access for free.\n'
-                                      'If you signed up while the app was free, you won’t see this screen.',
+                                  'If you signed up while the app was free, you won’t see this screen.',
                                   textAlign: TextAlign.center,
                                 ),
                               ),
@@ -212,10 +214,11 @@ class PaywallScreen extends StatelessWidget {
                                     child: FilledButton.tonal(
                                       onPressed: () => _goToLogin(context),
                                       style: FilledButton.styleFrom(
-                                        padding:
-                                        const EdgeInsets.symmetric(vertical: 14),
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 14),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                         ),
                                       ),
                                       child: const Text('Back to Sign In'),
@@ -227,7 +230,8 @@ class PaywallScreen extends StatelessWidget {
                                       onPressed: () {
                                         // Hook your purchase/upgrade flow here
                                         // e.g., Navigator.pushNamed(context, '/upgrade');
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
                                           const SnackBar(
                                             content: Text(
                                                 'Upgrade flow not connected yet.'),
@@ -235,10 +239,11 @@ class PaywallScreen extends StatelessWidget {
                                         );
                                       },
                                       style: FilledButton.styleFrom(
-                                        padding:
-                                        const EdgeInsets.symmetric(vertical: 14),
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 14),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                         ),
                                       ),
                                       child: const Text('Upgrade'),

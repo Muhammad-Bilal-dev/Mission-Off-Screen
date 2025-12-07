@@ -27,6 +27,9 @@ dependencies:
   # Audio & animation
   audioplayers: ^6.5.0
   lottie: ^3.1.2
+  flutter_overlay_window: ^0.5.0
+  android_alarm_manager_plus: ^5.0.0
+  logger: ^2.6.2
 
 dev_dependencies:
   flutter_test:

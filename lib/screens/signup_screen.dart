@@ -48,7 +48,8 @@ class _SignupScreenState extends State<SignupScreen> {
 
       // If signup succeeds, take them to the gated dashboard.
       if (mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil('/dashboard', (r) => false);
+        Navigator.of(context)
+            .pushNamedAndRemoveUntil('/dashboard', (r) => false);
       }
     } on FirebaseAuthException catch (e) {
       setState(() => _err = e.message ?? 'Sign up failed.');
@@ -95,7 +96,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 15,
                             offset: const Offset(0, 5),
                           ),
@@ -108,14 +109,14 @@ class _SignupScreenState extends State<SignupScreen> {
                             height: 120,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: cs.primary.withOpacity(0.1),
+                              color: cs.primary.withValues(alpha: 0.1),
                               border: Border.all(
-                                color: cs.primary.withOpacity(0.3),
+                                color: cs.primary.withValues(alpha: 0.3),
                                 width: 2,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
+                                  color: Colors.black.withValues(alpha: 0.1),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
@@ -136,10 +137,13 @@ class _SignupScreenState extends State<SignupScreen> {
                           const SizedBox(height: 16),
                           Text(
                             'Create Your Account',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: cs.primary,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: cs.primary,
+                                ),
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -160,7 +164,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 15,
                             offset: const Offset(0, 5),
                           ),
@@ -173,15 +177,18 @@ class _SignupScreenState extends State<SignupScreen> {
                           children: [
                             if (_err != null)
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 10),
                                 decoration: BoxDecoration(
                                   color: Colors.red.shade50,
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.red.shade200, width: 1),
+                                  border: Border.all(
+                                      color: Colors.red.shade200, width: 1),
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.error_outline, color: Colors.red.shade700, size: 16),
+                                    Icon(Icons.error_outline,
+                                        color: Colors.red.shade700, size: 16),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
@@ -196,81 +203,93 @@ class _SignupScreenState extends State<SignupScreen> {
                                 ),
                               ),
                             if (_err != null) const SizedBox(height: 16),
-
                             TextFormField(
                               controller: _name,
                               textInputAction: TextInputAction.next,
                               decoration: InputDecoration(
                                 labelText: 'Name',
-                                prefixIcon: Icon(Icons.person_outline, color: cs.primary),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                prefixIcon: Icon(Icons.person_outline,
+                                    color: cs.primary),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12)),
                                 filled: true,
                                 fillColor: Colors.grey.shade50,
                               ),
                             ),
                             const SizedBox(height: 16),
-
                             TextFormField(
                               controller: _email,
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
                               decoration: InputDecoration(
                                 labelText: 'Email',
-                                prefixIcon: Icon(Icons.email_outlined, color: cs.primary),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                prefixIcon: Icon(Icons.email_outlined,
+                                    color: cs.primary),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12)),
                                 filled: true,
                                 fillColor: Colors.grey.shade50,
                               ),
-                              validator: (v) =>
-                              (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
+                              validator: (v) => (v == null || !v.contains('@'))
+                                  ? 'Enter a valid email'
+                                  : null,
                             ),
                             const SizedBox(height: 16),
-
                             TextFormField(
                               controller: _password,
                               obscureText: _hide,
                               textInputAction: TextInputAction.next,
                               decoration: InputDecoration(
                                 labelText: 'Password',
-                                prefixIcon: Icon(Icons.lock_outline, color: cs.primary),
+                                prefixIcon:
+                                    Icon(Icons.lock_outline, color: cs.primary),
                                 suffixIcon: IconButton(
-                                  onPressed: () => setState(() => _hide = !_hide),
-                                  icon: Icon(_hide ? Icons.visibility_off : Icons.visibility,
+                                  onPressed: () =>
+                                      setState(() => _hide = !_hide),
+                                  icon: Icon(
+                                      _hide
+                                          ? Icons.visibility_off
+                                          : Icons.visibility,
                                       color: cs.primary),
                                 ),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12)),
                                 filled: true,
                                 fillColor: Colors.grey.shade50,
                               ),
-                              validator: (v) =>
-                              (v == null || v.length < 6) ? 'Min 6 characters' : null,
+                              validator: (v) => (v == null || v.length < 6)
+                                  ? 'Min 6 characters'
+                                  : null,
                             ),
                             const SizedBox(height: 16),
-
                             TextFormField(
                               controller: _confirm,
                               obscureText: _hideConfirm,
                               decoration: InputDecoration(
                                 labelText: 'Confirm password',
-                                prefixIcon: Icon(Icons.lock_person_outlined, color: cs.primary),
+                                prefixIcon: Icon(Icons.lock_person_outlined,
+                                    color: cs.primary),
                                 suffixIcon: IconButton(
-                                  onPressed: () =>
-                                      setState(() => _hideConfirm = !_hideConfirm),
+                                  onPressed: () => setState(
+                                      () => _hideConfirm = !_hideConfirm),
                                   icon: Icon(
-                                    _hideConfirm ? Icons.visibility_off : Icons.visibility,
+                                    _hideConfirm
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
                                     color: cs.primary,
                                   ),
                                 ),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12)),
                                 filled: true,
                                 fillColor: Colors.grey.shade50,
                               ),
-                              validator: (v) =>
-                              (v != _password.text) ? 'Passwords do not match' : null,
+                              validator: (v) => (v != _password.text)
+                                  ? 'Passwords do not match'
+                                  : null,
                               onFieldSubmitted: (_) => _signUp(),
                             ),
                             const SizedBox(height: 24),
-
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
@@ -281,37 +300,41 @@ class _SignupScreenState extends State<SignupScreen> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
                                   elevation: 3,
                                 ),
                                 child: _busy
                                     ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                  ),
-                                )
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                  Colors.white),
+                                        ),
+                                      )
                                     : const Text(
-                                  'Create Account',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                                        'Create Account',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                               ),
                             ),
                             const SizedBox(height: 16),
-
                             TextButton(
                               onPressed: () => Navigator.of(context)
-                                  .pushNamedAndRemoveUntil('/login', (r) => false),
+                                  .pushNamedAndRemoveUntil(
+                                      '/login', (r) => false),
                               child: RichText(
                                 text: TextSpan(
                                   style: TextStyle(color: Colors.grey.shade600),
                                   children: [
-                                    const TextSpan(text: 'Already have an account? '),
+                                    const TextSpan(
+                                        text: 'Already have an account? '),
                                     TextSpan(
                                       text: 'Sign in',
                                       style: TextStyle(

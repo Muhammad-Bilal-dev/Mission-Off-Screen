@@ -16,12 +16,20 @@ import 'services/notifications.dart';
 
 // Paywall gate
 import 'widgets/paywall_gate.dart';
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
+
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await _initFirebase();
+
+  // Initialize background alarm manager
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    await AndroidAlarmManager.initialize();
+  }
 
   if (!kIsWeb) {
     await NotificationService.instance.init(navigatorKey: navigatorKey);

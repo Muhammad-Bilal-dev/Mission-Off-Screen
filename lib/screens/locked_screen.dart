@@ -29,10 +29,8 @@ class _LockedScreenState extends State<LockedScreen> {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return;
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .get();
+      final doc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
       final pin = (doc.data()?['parentPin'] as String?) ?? '0000';
       if (_pin.text.trim() == pin) {
         if (!mounted) return;
@@ -49,8 +47,8 @@ class _LockedScreenState extends State<LockedScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return WillPopScope(
-      onWillPop: () async => false,
+    return PopScope(
+      canPop: false,
       child: Scaffold(
         appBar: AppBar(
           title: const Text(
@@ -102,10 +100,11 @@ class _LockedScreenState extends State<LockedScreen> {
                       const SizedBox(height: 16),
                       Text(
                         'Great Job!',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: cs.primary,
-                        ),
+                        style:
+                            Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: cs.primary,
+                                ),
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -129,7 +128,7 @@ class _LockedScreenState extends State<LockedScreen> {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 15,
                           offset: const Offset(0, 5),
                         ),
@@ -148,8 +147,8 @@ class _LockedScreenState extends State<LockedScreen> {
                                 shape: BoxShape.circle,
                                 gradient: RadialGradient(
                                   colors: [
-                                    cs.primary.withOpacity(0.2),
-                                    cs.primary.withOpacity(0.05),
+                                    cs.primary.withValues(alpha: 0.2),
+                                    cs.primary.withValues(alpha: 0.05),
                                   ],
                                 ),
                               ),
@@ -162,13 +161,13 @@ class _LockedScreenState extends State<LockedScreen> {
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withValues(alpha: 0.1),
                                     blurRadius: 10,
                                     offset: const Offset(0, 4),
                                   ),
                                 ],
                                 border: Border.all(
-                                  color: cs.primary.withOpacity(0.3),
+                                  color: cs.primary.withValues(alpha: 0.3),
                                   width: 2,
                                 ),
                               ),
@@ -193,10 +192,11 @@ class _LockedScreenState extends State<LockedScreen> {
                         // Instructions for children
                         Text(
                           'Ask your parents to unlock',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: cs.primary,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: cs.primary,
+                                  ),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 8),
@@ -213,7 +213,8 @@ class _LockedScreenState extends State<LockedScreen> {
                         if (_err != null)
                           Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
                               color: Colors.red.shade50,
                               borderRadius: BorderRadius.circular(8),
@@ -224,7 +225,8 @@ class _LockedScreenState extends State<LockedScreen> {
                             ),
                             child: Row(
                               children: [
-                                Icon(Icons.error_outline, color: Colors.red.shade700, size: 16),
+                                Icon(Icons.error_outline,
+                                    color: Colors.red.shade700, size: 16),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
@@ -258,11 +260,13 @@ class _LockedScreenState extends State<LockedScreen> {
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: cs.primary.withOpacity(0.5)),
+                              borderSide: BorderSide(
+                                  color: cs.primary.withValues(alpha: 0.5)),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: cs.primary, width: 2),
+                              borderSide:
+                                  BorderSide(color: cs.primary, width: 2),
                             ),
                             filled: true,
                             fillColor: Colors.grey.shade50,
@@ -272,7 +276,8 @@ class _LockedScreenState extends State<LockedScreen> {
                               fontWeight: FontWeight.normal,
                               letterSpacing: 0,
                             ),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                            contentPadding: const EdgeInsets.symmetric(
+                                vertical: 16, horizontal: 20),
                           ),
                           onSubmitted: (_) => _unlock(),
                         ),
@@ -291,24 +296,25 @@ class _LockedScreenState extends State<LockedScreen> {
                               ),
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               elevation: 3,
-                              shadowColor: cs.primary.withOpacity(0.4),
+                              shadowColor: cs.primary.withValues(alpha: 0.4),
                             ),
                             child: _busy
                                 ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white),
+                                    ),
+                                  )
                                 : const Text(
-                              'Unlock',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                                    'Unlock',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
                         )
                       ],
